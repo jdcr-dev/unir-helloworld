@@ -1,47 +1,62 @@
 pipeline {
     agent any
 
+    environment {
+        STASH_CALCULADORA = 'CALCULADORA'
+    }
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
         stage('Get Code') {
             steps {
-                git 'https://github.com/jdcr-dev/unir-helloworld'
-                // bat 'git clone <URL>'
+                git branch: 'agentes', url: 'https://github.com/jdcr-dev/unir-helloworld'                
             }
         }
         
-        stage('Build') {
-            steps {
-                echo 'Eyyy, esto es Python. No hay que compilar nada!!!'
-                echo WORKSPACE
-                bat 'dir'
+        stage('Build') {            
+            steps {                
+                stash name: STASH_CALCULADORA, includes: '**'
             }
         }
         
         stage('Test'){
             parallel {
                 stage('Unit') {
+                    agent { label 'linux-agent-1' }
                     steps {
+                        unstash STASH_CALCULADORA
+
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            bat '''
-                                set PYTHONPATH=%WORKSPACE%
+                            sh '''
+                                whoami
+                                hostname
+                                
+                                export PYTHONPATH=.
                                 pytest --junitxml=result-unit.xml test/unit
-                            '''
-                        }
+                            '''                            
+                        }                        
                     }
                 }
-        
+
                 stage('Rest'){
+                    agent { label 'linux-agent-2' }
                     steps {
-                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            bat '''
-                                set FLASK_APP=app/api.py
-                                start flask run
-                            
-                                start java -jar c:\\Python39\\Lib\\site-packages\\wiremock\\server\\wiremock-standalone-2.35.1.jar --port 9090 --verbose --root-dir test\\wiremock
-                                
-                                set PYTHONPATH=%WORKSPACE%
+                        unstash STASH_CALCULADORA
+
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {                    
+                            sh '''
+                                whoami
+                                hostname
+
+                                export FLASK_APP=app/api.py
+                                flask run &                                           
+                                                        
+                                export PYTHONPATH=.
                                 pytest --junitxml=result-rest.xml test/rest
-                            '''
+                            '''                            
                         }
                     }
                 }
@@ -49,10 +64,23 @@ pipeline {
         }
         
         
-        stage('Results'){
-            steps {
-                junit 'result*.xml'
-                echo 'FINISH'
+        stage('Results'){            
+            parallel {
+                stage('Unit') {
+                    agent { label 'linux-agent-1' }
+                    steps {
+                        junit 'result*.xml'
+                        echo 'FINISH'
+                    }
+                }
+
+                stage('Rest') {
+                    agent { label 'linux-agent-2' }
+                    steps {
+                        junit 'result*.xml'
+                        echo 'FINISH'
+                    }
+                }
             }
         }
     }
