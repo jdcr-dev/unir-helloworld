@@ -45,8 +45,11 @@ def divide(op_1, op_2):
     try:            
         num_1, num_2 = util.convert_to_number(op_1), util.convert_to_number(op_2)
 
-        #if(num_2 == 0):
-        #    return ("Divide by zero not allowed", http.client.BAD_REQUEST, HEADERS)
+        # TODO: Creo que este 406 no es un valor a devolver para este tipo de problema. 
+        # Un 406 hace referencia a que el servidor no puede proporcionar la respuesta que
+        # el cliente requiere.
+        if(num_2 == 0):
+            return ("Divide by zero not allowed", http.client.NOT_ACCEPTABLE, HEADERS)
 
         return ("{}".format(CALCULATOR.divide(num_1, num_2)), http.client.OK, HEADERS)
     except TypeError as e:

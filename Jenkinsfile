@@ -4,11 +4,10 @@ pipeline {
     stages {
         stage('Get Code') {
             steps {
-                git 'https://github.com/jdcr-dev/unir-helloworld'
-                // bat 'git clone <URL>'
+                git branch: 'develop', url:'https://github.com/jdcr-dev/unir-helloworld.git'                                
             }
         }
-        
+                
         stage('Build') {
             steps {
                 echo 'Eyyy, esto es Python. No hay que compilar nada!!!'

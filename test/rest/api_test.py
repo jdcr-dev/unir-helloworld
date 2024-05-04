@@ -62,7 +62,7 @@ class TestApi(unittest.TestCase):
             response = urlopen(url, timeout=DEFAULT_TIMEOUT)
         except HTTPError as e:
             self.assertEqual(
-                e.status, http.client.BAD_REQUEST, f"Error en la petición API a {url}"        
+                e.status, http.client.NOT_ACCEPTABLE, f"Error en la petición API a {url}"        
             )        
 
     def test_api_sqrt(self):
